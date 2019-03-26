@@ -8,7 +8,7 @@ Unityで使うシンプルなGPUパーティクルです。コンピュートシ
 
 ### particle-unlit
 シンプルなUnilitパーティクル
-[](./Images/01_unlit.gif)
+[](https://github.com/sakokazuki/GpuParticle/blob/master/Images/01_unlit.gif)
 
 ### particle-additive
 シンプルなAdditiveパーティクル
