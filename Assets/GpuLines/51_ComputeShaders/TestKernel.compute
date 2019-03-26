@@ -1,0 +1,35 @@
+﻿#pragma kernel IntCS
+#pragma kernel TestDataCS
+
+RWStructuredBuffer<int> intBuffer;
+int intValue; // uniform
+
+struct TestData {
+	int id;
+	float3 position;
+	float3 velocity;
+};
+RWStructuredBuffer<TestData> testDataBuffer;
+
+
+
+
+[numthreads(4, 1, 1)]
+void IntCS(uint3 groupID : SV_GroupID,
+	uint3 groupThreadID : SV_GroupThreadID)
+{
+	int old = intBuffer[groupThreadID.x];
+	intBuffer[groupThreadID.x] = groupThreadID.x + old;
+}
+
+[numthreads(4, 1, 1)]
+void TestDataCS(uint3 groupID : SV_GroupID,
+	uint3 groupThreadID : SV_GroupThreadID,
+	uint3 DTid : SV_DispatchThreadID)
+{
+	TestData t = testDataBuffer[groupThreadID.x];
+	TestData buf = testDataBuffer[groupThreadID.x];
+	t.position.x += 1;
+	t.velocity =  t.position - buf.position;
+	testDataBuffer[groupThreadID.x] = t;
+}
