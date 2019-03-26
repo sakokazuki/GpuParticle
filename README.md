@@ -8,16 +8,16 @@ Unityで使うシンプルなGPUパーティクルです。コンピュートシ
 
 ### particle-unlit
 シンプルなUnilitパーティクル
-[](https://github.com/sakokazuki/GpuParticle/blob/master/Images/01_unlit.gif)
+![](./Images/01_unlit.gif)
 
 ### particle-additive
 シンプルなAdditiveパーティクル
-[](./Images/02_additive.gif)
+![](./Images/02_additive.gif)
 
 ### emit position from texture
 emitポジションをテクスチャから指定する
-[](./Images/03_textureemit.gif)
+![](./Images/03_textureemit.gif)
 
 ### instanced mesh
 メッシュパーティクル。surfaceシェーダー使える。
-[](./Images/04_mesh.gif)
+![](./Images/04_mesh.gif)
