@@ -1,0 +1,27 @@
+# Exported from ProBuilder
+# http://www.procore3d.com/probuilder
+# 2019/03/26 17:12:14
+
+mtllib ./Plane.mtl
+o Plane
+
+g Plane
+v 0.5 0 -0.5
+v 0.5 0 0.5
+v -0.5 0 -0.5
+v -0.5 0 0.5
+
+vn 0 1 0
+vn 0 1 0
+vn 0 1 0
+vn 0 1 0
+
+vt 0 0
+vt 0 1
+vt 1 0
+vt 1 1
+
+g Plane
+usemtl Default_Prototype
+f 3/3/3 4/4/4 2/2/2 1/1/1
+

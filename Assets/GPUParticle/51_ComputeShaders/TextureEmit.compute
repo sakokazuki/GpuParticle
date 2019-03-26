@@ -1,0 +1,76 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel Init
+#pragma kernel Emit
+#pragma kernel Update
+
+#include "UnityCG.cginc"
+
+#include "Assets/GpuParticle/51_ComputeShaders/ParticleData.cginc"
+
+
+float _DeltaTime;
+
+float random(float2 st) {
+	return frac(sin(dot(st.xy, float2(12.9898, 78.233)))*43758.5453123);
+}
+
+RWStructuredBuffer<ParticleData> _Particles;
+AppendStructuredBuffer<uint> _DeadList;
+ConsumeStructuredBuffer<uint> _ParticlePool;
+
+Texture2D<float4> _PositionTex;
+Texture2D<float4> _VelocityTex;
+SamplerState _LinearClamp;
+float4 _PositionTex_TexelSize;
+float4 _VelocityTex_TexelSize;
+
+[numthreads(8, 1, 1)]
+void Init(uint3 id : SV_DispatchThreadID){
+	uint idd = id.x;
+	_Particles[idd].isDead = 1;
+	_DeadList.Append(idd);
+
+}
+
+[numthreads(8, 1, 1)]
+void Emit() {
+	uint id = _ParticlePool.Consume();
+	float u = random(float2(id, _Time.y));
+	float v = random(float2(id, _Time.x));
+	float2 randUv = float2(u, v);
+	float4 position = _PositionTex.SampleLevel(_LinearClamp, randUv, 0);
+	float4 velocity = _VelocityTex.SampleLevel(_LinearClamp, randUv, 0);
+	ParticleData p = _Particles[id];
+
+	p.isDead = 0;
+	
+	p.position = position.xyz;
+	p.velocity = (velocity.xyz)*2.0;
+	p.color = float4(1, 1, 1, 1);
+	p.duration = 5;
+	p.scale = 0.1;
+
+	_Particles[id] = p;
+
+}
+
+// (8, 1, 1)のスレッドで回す
+[numthreads(8, 1, 1)]
+void Update(uint3 id : SV_DispatchThreadID)
+{
+	uint idd = id.x;
+	ParticleData p = _Particles[idd];
+	if (p.isDead == 0) {
+		p.position += p.velocity * _DeltaTime;
+		if (p.duration < 0) {
+			p.isDead = 1;
+			_DeadList.Append(id);
+		}
+		else {
+			p.duration -= _DeltaTime;
+		}
+	}
+
+	_Particles[idd] = p;
+
+}
