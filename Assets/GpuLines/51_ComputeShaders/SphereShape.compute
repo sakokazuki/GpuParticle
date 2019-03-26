@@ -1,0 +1,94 @@
+﻿
+#pragma kernel CSMain
+#include "UnityCG.cginc"
+#include "Assets/Cgincs/Utils.cginc"
+#include "Assets/Cgincs/Noise/SimplexNoise3D.cginc"
+
+RWTexture2D<float4> positionBuffer;
+RWTexture2D<float4> normalBuffer;
+RWTexture2D<float4> velocityBuffer;
+
+//uniform
+float _LineAngle;
+float3 _WorldCameraPosition;
+float _VelocityScale;
+
+
+
+float3 Position(float2 uv) {
+
+	float p = uv.y;
+
+	float lineId = uv.x;
+
+	//interval lines
+	float size = 1.0;
+	float r = size;
+
+	//create rings
+	float angle = p * UNITY_PI;
+	float angle2 = (lineId*2.0 + p + 2 * sin(_Time.y + lineId)) * UNITY_PI;
+	float x = r * sin(angle) * cos(angle2);
+	float z = r * sin(angle) * sin(angle2);
+	float y = r * cos(angle);
+
+	float3 circle = float3(x, y, z);
+	return circle;
+}
+
+float4 Normal(float3 position, float2 uv) {
+	float2 uv0 = uv;
+	float2 uv1 = float2(uv.x, uv.y + 0.01);
+
+	float3 sur0 = position;
+	float3 sur1 = Position(uv1);
+	//カメラ方向のベクトル(normal)
+	float3 eyeDir = _WorldCameraPosition - sur0;
+	//次の点へのベクトル
+	float3 toDir = normalize(sur0 - sur1);
+	//それぞれのベクトルに直角なベクトル(binormal)
+	float3 sideDir = cross(toDir, eyeDir);
+
+	//rendererのシェーダーはnormalはそのままNormalとして使い、
+	//birnormal方向にポリゴンを広げるようになっている
+	float3 normal = normalize(eyeDir);
+	float3 binormal = normalize(sideDir);
+	
+	//ここでリターンするとカメラに正対するmeshになる
+	//return float4(StereoProjection(normal), StereoProjection(binormal));
+	
+	//--- rotate angle
+	float deg2pi = UNITY_PI / 180;
+	float angle1 = _LineAngle * deg2pi;
+	float angle2 = (_LineAngle + 90) * deg2pi;
+
+	float3 no = normal;
+	float3 bi = binormal;
+	normal = cos(angle2) * bi + sin(angle2) * no;
+	binormal = cos(angle1) * bi + sin(angle1) * no;
+	normal = normalize(normal);
+	binormal = normalize(binormal);
+	return float4(StereoProjection(normal), StereoProjection(binormal));
+}
+
+
+[numthreads(8, 8, 1)]
+void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+	float lineCount, segmentCount;
+	positionBuffer.GetDimensions(lineCount, segmentCount);
+	float2 uv = float2(dispatchThreadID.x / lineCount, dispatchThreadID.y / segmentCount);
+	
+	
+	float3 position = Position(uv);
+	float4 normal = Normal(position, uv);
+	//veolocity
+
+	//pre 1frame buffer
+	float3 pPositionBuffer = positionBuffer[dispatchThreadID.xy]; 
+	float3 velocity = (position - pPositionBuffer) * _VelocityScale;
+	
+	positionBuffer[dispatchThreadID.xy] = float4(position, 1);
+	normalBuffer[dispatchThreadID.xy] = normal;
+	velocityBuffer[dispatchThreadID.xy] = float4(velocity, 1);
+}
